@@ -5,6 +5,8 @@ import { eq, or } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/helper.js";
 import status from "http-status";
+import { sendWelcomeEmail } from "../emails/email.handler.js";
+import { ENV_VARS } from "../utils/env.js";
 
 export const signup = async (req, res, next) => {
   try {
@@ -39,6 +41,12 @@ export const signup = async (req, res, next) => {
         fullName: newUser.full_name,
         profilePic: newUser.profile_pic ?? "",
       });
+      if (ENV_VARS.NODE_ENV.includes("dev"))
+        await sendWelcomeEmail(
+          newUser.email,
+          newUser.full_name,
+          ENV_VARS.CLIENT_URL,
+        );
     }
   } catch (error) {
     throw error;
