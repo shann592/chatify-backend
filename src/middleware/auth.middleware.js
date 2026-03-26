@@ -31,7 +31,7 @@ export const protectRoute = async (req, res, next) => {
   } catch (error) {
     res.status(status.INTERNAL_SERVER_ERROR).json({
       message: "Internal server error",
-      ...(ENV_VARS.NODE_ENV.includes("dev") && { error: error }),
+      ...(ENV_VARS.NODE_ENV.includes("dev") && { error }),
     });
   }
 };
