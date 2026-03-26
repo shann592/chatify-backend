@@ -19,3 +19,14 @@ export const LoginDto = z.object({
   email: z.email(),
   password: z.string(),
 });
+
+export const UpdateProfileDto = z.object({
+  profilePic: z
+    .string()
+    .regex(
+      /^(?:data:image\/(?:png|jpg|jpeg|gif);base64,)?[A-Za-z0-9+/]+={0,2}$/,
+      "Invalid base64 image string",
+    )
+    .optional(),
+  fullName: z.string().optional(),
+});

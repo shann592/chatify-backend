@@ -9,7 +9,9 @@ export const generateToken = (userId, res) => {
     maxAge: 1 * 24 * 60 * 60 * 1000, //1days in MS,
     httpOnly: true, // prevent XSS attack,
     sameSite: "strict", //prevent CRSF attack,
-    secure: ENV_VARS.NODE_ENV === "production",
+    secure: ENV_VARS.NODE_ENV.includes("prod"),
   });
   return token;
 };
+
+export const removePassword = ({ password, ...rest }) => rest;

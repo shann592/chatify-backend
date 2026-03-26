@@ -1,12 +1,13 @@
-import { CreateUserDto, LoginDto } from "./dtos/auth.dto.js";
+import { CreateUserDto, LoginDto, UpdateProfileDto } from "./dtos/auth.dto.js";
 import db from "../db/index.js";
 import * as schema from "../db/schemas/user.schema.js";
 import { eq, or } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { generateToken } from "../utils/helper.js";
+import { generateToken, removePassword } from "../utils/helper.js";
 import status from "http-status";
 import { sendWelcomeEmail } from "../emails/email.handler.js";
 import { ENV_VARS } from "../utils/env.js";
+import cloudinary from "../utils/cloudinary.js";
 
 export const signup = async (req, res, next) => {
   try {
@@ -94,4 +95,36 @@ export const login = async (req, res, next) => {
 export const logout = async (_, res, next) => {
   res.cookie("jwt", "", { maxAge: 0 });
   res.status(status.OK).json({ message: "Logged out successfully" });
+};
+export const updateProfile = async (req, res, next) => {
+  const payload = UpdateProfileDto.safeParse(req.body);
+  if (!payload.success)
+    return res.status(status.BAD_REQUEST).json({
+      error: payload.error.format(),
+    });
+  const userId = req.user.id;
+  const { profilePic, fullName } = payload.data;
+  let uploadResponse;
+  try {
+    if (profilePic)
+      uploadResponse = await cloudinary.uploader.upload(profilePic);
+    const user = await db
+      .update(schema.users)
+      .set({
+        ...(profilePic && { profile_pic: uploadResponse.secure_url }),
+        ...(fullName && { full_name: fullName }),
+      })
+      .where(eq(schema.users.id, userId))
+      .returning();
+    res.status(status.OK).json(removePassword(user));
+  } catch (error) {
+    res.status(status.INTERNAL_SERVER_ERROR).json({
+      message: "Internal server error",
+      ...(ENV_VARS.NODE_ENV.includes("dev") && { error: error }),
+    });
+  }
+};
+
+export const checkUser = async (req, res, next) => {
+  res.status(status.OK).json(req.user);
 };
