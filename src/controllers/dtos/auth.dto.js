@@ -14,3 +14,8 @@ export const CreateUserDto = z.object({
       "Password must contain at least one special character",
     ),
 });
+
+export const LoginDto = z.object({
+  email: z.email(),
+  password: z.string(),
+});

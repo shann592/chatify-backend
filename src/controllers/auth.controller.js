@@ -1,4 +1,4 @@
-import { CreateUserDto } from "./dtos/auth.dto.js";
+import { CreateUserDto, LoginDto } from "./dtos/auth.dto.js";
 import db from "../db/index.js";
 import * as schema from "../db/schemas/user.schema.js";
 import { eq, or } from "drizzle-orm";
@@ -49,14 +49,49 @@ export const signup = async (req, res, next) => {
         );
     }
   } catch (error) {
-    throw error;
+    res.status(status.INTERNAL_SERVER_ERROR).json({
+      message: "Internal server error",
+      ...(ENV_VARS.NODE_ENV.includes("dev") && { error: error }),
+    });
   }
 };
 
 export const login = async (req, res, next) => {
-  res.send("login");
+  const payload = LoginDto.safeParse(req.body);
+  if (!payload.success)
+    return res.status(status.BAD_REQUEST).json({
+      error: payload.error.format(),
+    });
+  const { email, password } = payload.data;
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.email, email),
+    });
+    if (!user)
+      return res.status(status.NOT_FOUND).json({
+        message: `User with email ${email} not found!`,
+      });
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect)
+      return res.status(status.UNAUTHORIZED).json({
+        message: "Invalid credentials",
+      });
+    generateToken(user.id, res);
+    res.status(status.OK).json({
+      id: user.id,
+      email: user.email,
+      fullName: user.full_name,
+      profilePic: user.profile_pic ?? "",
+    });
+  } catch (error) {
+    res.status(status.INTERNAL_SERVER_ERROR).json({
+      message: "Internal server error",
+      ...(ENV_VARS.NODE_ENV.includes("dev") && { error: error }),
+    });
+  }
 };
 
-export const logout = async (req, res, next) => {
-  res.send("logout");
+export const logout = async (_, res, next) => {
+  res.cookie("jwt", "", { maxAge: 0 });
+  res.status(status.OK).json({ message: "Logged out successfully" });
 };
