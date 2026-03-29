@@ -108,7 +108,7 @@ export const updateProfile = async (req, res, next) => {
   try {
     if (profilePic)
       uploadResponse = await cloudinary.uploader.upload(profilePic);
-    const user = await db
+    const [user] = await db
       .update(schema.users)
       .set({
         ...(profilePic && { profile_pic: uploadResponse.secure_url }),
