@@ -13,6 +13,13 @@ export const CreateUserDto = z.object({
       /[^A-Za-z0-9]/,
       "Password must contain at least one special character",
     ),
+  profilePic: z
+    .string()
+    .regex(
+      /^(?:data:image\/(?:png|jpg|jpeg|gif);base64,)?[A-Za-z0-9+/]+={0,2}$/,
+      "Invalid base64 image string",
+    )
+    .optional(),
 });
 
 export const LoginDto = z.object({
