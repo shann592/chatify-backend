@@ -17,7 +17,7 @@ export const signup = async (req, res, next) => {
         error: payload.error.format(),
       });
 
-    const { fullName, email, password } = payload.data;
+    const { fullName, email, password, profilePic } = payload.data;
     const user = await db.query.users.findFirst({
       where: eq(schema.users.email, email),
     });
@@ -26,12 +26,17 @@ export const signup = async (req, res, next) => {
         .status(status.BAD_REQUEST)
         .json({ message: "Email already exists." });
     const hashedPassword = await bcrypt.hash(password, 10);
+    let uploadResponse;
+    if (profilePic) {
+      uploadResponse = await cloudinary.uploader.upload(profilePic);
+    }
     const [newUser] = await db
       .insert(schema.users)
       .values({
         full_name: fullName,
         email,
         password: hashedPassword,
+        ...(uploadResponse && { profile_pic: uploadResponse.secure_url }),
       })
       .returning();
     if (newUser) {
