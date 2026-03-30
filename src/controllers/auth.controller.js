@@ -83,12 +83,7 @@ export const login = async (req, res, next) => {
         message: "Invalid credentials",
       });
     generateToken(user.id, res);
-    res.status(status.OK).json({
-      id: user.id,
-      email: user.email,
-      fullName: user.full_name,
-      profilePic: user.profile_pic ?? "",
-    });
+    res.status(status.OK).json(removePassword(user));
   } catch (error) {
     res.status(status.INTERNAL_SERVER_ERROR).json({
       message: "Internal server error",
